@@ -134,5 +134,5 @@ if __name__ == "__main__":
             if(k in writableList):
                 writableList.remove(k)
             k.close()
-        time.sleep(0.5)  #该语句减缓运行时间，可用于测试“同时处理多个client来发数据”
+        #time.sleep(0.5)  #该语句减缓运行时间，可用于测试“同时处理多个client来发数据”
 
