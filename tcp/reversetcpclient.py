@@ -28,24 +28,24 @@ class Agreement(object):
 
 class ReverseRequest(object):
     # ReverseRequest类
-    def __init__(self, type, len ,data):
+    def __init__(self, type, len , beforedata):
         self.Type = type.to_bytes(2, "little", signed=True)  # Type:2 Bytes
         self.Length = len.to_bytes(4, "little", signed=True)  # Length:4 Bytes
-        self.Data = bytes(data, encoding="ascii")  # Data:长度未设定
+        self.beforeData = bytes(beforedata, encoding="ascii")  # Data:长度未设定
 
     def Splice(self):  # 把ReverseRequest类对象的各个参数(Type,Length,Data)拼接在一起
-        return self.Type + self.Length + self.Data
+        return self.Type + self.Length + self.beforeData
 
 
 class ReverseAnswer(object):
     # ReverseAnswer类
-    def __init__(self, type, len, data):
+    def __init__(self, type, len, afterdata):
         self.Type = type.to_bytes(2, "little", signed=True)  # Type:2 Bytes
         self.Length = len.to_bytes( 4, "little", signed=True)  # Length:4 Bytes
-        self.beforeData = bytes(data, encoding="ascii") 
+        self.afterData = bytes(afterdata, encoding="ascii")
 
     def Splice(self):  # 把ReverseAnswer类对象的各个参数(Type,Length,beforeData)拼接在一起
-        return self.Type + self.Length + self.beforeData
+        return self.Type + self.Length + self.afterData
 
 
 
@@ -62,8 +62,8 @@ def DecodeMessage(messageString):
         return [Type,Length,Data]
     if Type == 3:
         Length = int.from_bytes(messageString[2:6], "little", signed=True)
-        beforeData =messageString[6:].decode(encoding="ascii")
-        return [Type,Length,beforeData]
+        afterData =messageString[6:].decode(encoding="ascii")
+        return [Type,Length,afterData]
 
 def start():
     try:
@@ -106,8 +106,8 @@ if __name__ == "__main__":
         file = open(beforePath, 'r')
         content = file.read()
         while len(content) >= Lmin:
-            contenLen = len(content)
-            lenOfData = rd.randint(Lmin, min(Lmax, contenLen))  # 随机生成长度
+            contentLen = len(content)
+            lenOfData = rd.randint(Lmin, min(Lmax, contentLen))  # 随机生成长度
             tempData = content[:lenOfData]  #切割
             afterData.append(tempData)  # 放到数组中
             tempContent = content[lenOfData:]
@@ -115,6 +115,7 @@ if __name__ == "__main__":
         if content:
             afterData.append(content)
         N = len(afterData)  # 分割后的原数据大小
+        file.close()
         start()
     except:
         print("分割reverse错误！")
@@ -123,7 +124,6 @@ if __name__ == "__main__":
         with open(afterPath, 'w') as afterFile:
             for i in beforeData:
                 afterFile.write(i)
-        file.close()
         afterFile.close()
         clientSocket.close()
 
