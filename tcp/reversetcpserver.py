@@ -11,40 +11,45 @@ messageList = {}
 
 
 class Initialization(object):
+    # Initialization类
     def __init__(self, type, N):
-        self.Type = int.to_bytes(type, 2, "little", signed=True)  # Type：2 Bytes
-        self.N = int.to_bytes(N, 4, "little", signed=True)  # N：4 Bytes
+        self.Type = type.to_bytes(2, "little", signed=True)  # Type:2 Bytes
+        self.N = N.to_bytes(4, "little", signed=True)  # N:4 Bytes
 
-    def splice(self):
+    def Splice(self):  # 把Initialization类对象的各个参数(Type和N)拼接在一起
         return self.Type + self.N
 
 
 class Agreement(object):
+    #Agreement类
     def __init__(self, type):
-        self.Type = int.to_bytes(type, 2, "little", signed=True)  # Type：2 Bytes
+        self.Type = type.to_bytes(2, "little", signed=True)  # Type:2 Bytes
 
-    def splice(self):
+    def Splice(self):  # 把Agreement类对象的各个参数(只有Type)拼接在一起
         return self.Type
 
 
 class ReverseRequest(object):
-    def __init__(self, type, Length, Data):
-        self.Type = int.to_bytes(type, 2, "little", signed=True)  # Type：2 Bytes
-        self.Length = int.to_bytes(Length, 4, "little", signed=True)  # Length：4 Bytes
-        self.Data = bytes(Data, encoding="ascii")  # data长度可变
+    # ReverseRequest类
+    def __init__(self, type, len , beforedata):
+        self.Type = type.to_bytes(2, "little", signed=True)  # Type:2 Bytes
+        self.Length = len.to_bytes(4, "little", signed=True)  # Length:4 Bytes
+        self.beforeData = bytes(beforedata, encoding="ascii")  # Data:长度未设定
 
-    def splice(self):
-        return self.Type + self.Length + self.Data
+    def Splice(self):  # 把ReverseRequest类对象的各个参数(Type,Length,Data)拼接在一起
+        return self.Type + self.Length + self.beforeData
 
 
 class ReverseAnswer(object):
-    def __init__(self, type, Length, ReverseData):
-        self.Type = int.to_bytes(type, 2, "little", signed=True)  # Type：2 Bytes
-        self.Length = int.to_bytes(Length, 4, "little", signed=True)  # Length：4 Bytes
-        self.ReverseData = bytes(ReverseData, encoding="ascii")  # ReverseData 长度可变
+    # ReverseAnswer类
+    def __init__(self, type, len, afterdata):
+        self.Type = type.to_bytes(2, "little", signed=True)  # Type:2 Bytes
+        self.Length = len.to_bytes( 4, "little", signed=True)  # Length:4 Bytes
+        self.afterData = bytes(afterdata, encoding="ascii")
 
-    def splice(self):
-        return self.Type + self.Length + self.ReverseData
+    def Splice(self):  # 把ReverseAnswer类对象的各个参数(Type,Length,beforeData)拼接在一起
+        return self.Type + self.Length + self.afterData
+
 
 
 
@@ -61,34 +66,33 @@ def DecodeMessage(messageString):
         return Data
     elif Type == 3:
         Length = int.from_bytes(messageString[2:6], "little", signed=True)
-        reverseData =messageString[6:].decode(encoding="ascii")
-        return reverseData
+        afterData =messageString[6:].decode(encoding="ascii")
+        return afterData
 
 
 def writeMessage(i):
-     # 获取消息队列中要发送的消息
-    tempSendMessage = messageList.get(i)
+    tempSendMessage = messageList.get(i)  #获取data
     if tempSendMessage:
         clientMessage = DecodeMessage(tempSendMessage.get_nowait())
         if clientMessage == 0:  # 说明接收到的是Initialization类型的报文,则发送agreement报文
             # 发送agreement报文
             agreMessage = Agreement(1)
-            i.send(agreMessage.splice())
+            i.send(agreMessage.Splice())
         # 接收reverseRequest报文
-        if isinstance(clientMessage, str):  # 接收到的是一个字符串，说明是ReverseRequest报文
+        else:  # 接收到的是ReverseRequest报文
             ansData = ""
             for char in clientMessage:  #对字符串的逆转
                 ansData = char + ansData
             ansMessage = ReverseAnswer(3, len(ansData), ansData)  # 把操作后的字符串当做报文中的数据发送到client端
-            i.send(ansMessage.splice())
+            i.send(ansMessage.Splice())
 
 
 def readMessage(i, serverSocket):
     if i is serverSocket:  # 当有新的客户端连接时，会执行这部分代码，接受新的客户端连接，并将新的客户端加入到 readableList 中，并为其创建一个消息队列。
         clientSocket, clientAddress = serverSocket.accept()
-        clientSocket.setblocking(False)
+        clientSocket.setblocking(False)  # 非阻塞
+        messageList[clientSocket] = q.Queue()   # 加入到这个client要发送的消息队列
         readableList.append(clientSocket)
-        messageList[clientSocket] = q.Queue()
     else:
         tempData = i.recv(2048)
         if tempData:  # 从客户端接收数据，如果接收到数据，则将数据放入消息队列中，并将该客户端加入到输出列表中，以便后续向该客户端发送消息。
@@ -98,7 +102,6 @@ def readMessage(i, serverSocket):
             if tempDecodeData != 0:
                 print(f'{i.getpeername()}: {tempDecodeData}')  # 注明该消息是从何而来，以便区分多个客户端
             messageList[i].put(tempData)
-        # client端断开连接
         else:  # 客户端断开连接
             if (i in readableList):  #移除
                 readableList.remove(i)
