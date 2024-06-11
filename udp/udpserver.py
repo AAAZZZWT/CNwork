@@ -4,7 +4,7 @@ import datetime as dt
 
 
 secondFlag = False #判断第二次握手是否完成
-thirdFlag = False #判断第二次握手是否完成
+thirdFlag = False #判断第三次握手是否完成
 fromClientSeq = 0
 class MessageForm(object):
     '''
