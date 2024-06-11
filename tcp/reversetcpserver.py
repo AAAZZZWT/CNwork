@@ -113,7 +113,7 @@ def readMessage(i, serverSocket):
 
 if __name__ == "__main__":
     serverSocket = socket(AF_INET, SOCK_STREAM)
-    serverSocket.bind(('', serverPort))
+    serverSocket.bind(('', serverPort))  # ''表示绑定到本地所有可用的网络接口
     serverSocket.setblocking(False)  # 设置为非阻塞
     serverSocket.listen(10)  #最大等待数量为10
     print("server已开启！")
