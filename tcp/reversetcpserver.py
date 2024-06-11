@@ -3,7 +3,6 @@ import queue as q
 import select
 import time
 
-serverIP = '192.168.41.128'
 serverPort = 12000
 readableList = []
 writableList = []
@@ -114,7 +113,7 @@ def readMessage(i, serverSocket):
 
 if __name__ == "__main__":
     serverSocket = socket(AF_INET, SOCK_STREAM)
-    serverSocket.bind((serverIP, serverPort))
+    serverSocket.bind(('', serverPort))
     serverSocket.setblocking(False)  # 设置为非阻塞
     serverSocket.listen(10)  #最大等待数量为10
     print("server已开启！")
